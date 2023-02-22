@@ -1,0 +1,9 @@
+meta defaultFileExtension png
+
+path begin default
+
+chars bob joe
+back menu
+emo bob angry
+bob "this contains space so must put quotations"
+joe huh
