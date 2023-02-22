@@ -4,6 +4,7 @@ let ctx = canvas.getContext("2d");
 
 //game object because funny
 import {Game} from "./game.js";
+import { parseStory } from "./parse.js";
 let game = new Game();
 //recalc screen dimensions
 function calc(){
@@ -34,5 +35,16 @@ async function frame(){
     }
     requestAnimationFrame(frame);
 }
+console.log(parseStory(`meta defaultFileExtension png
+
+path begin default
+
+chars
+
+block
+chars bob joe
+back menu
+emo bob angry
+bob "this contains space so must put quotations"
+joe huh`));
 calc();
-frame();
