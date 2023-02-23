@@ -35,16 +35,19 @@ async function frame(){
     }
     requestAnimationFrame(frame);
 }
-console.log(parseStory(`meta defaultFileExtension png
+console.log(parseStory(`
+meta storyParseTargetVersion 0.0
+meta defaultFileExtension png
 
 path begin default
-
-chars
-
 block
+sound start sound.mp3 1000 0123456
 chars bob joe
 back menu
-emo bob angry
+sprite bob angry
 bob "this contains space so must put quotations"
-joe huh`));
+joe huh
+options name path name2 path2
+sound end 0123456
+path end`));
 calc();

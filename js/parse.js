@@ -2,6 +2,7 @@ const checks = {
     "meta": 2,
     "chars": 0
 }
+const storyParseVersion = "0.0"
 function splitString(str) {
     const result = [];
     let current = "";
@@ -44,17 +45,19 @@ function matchCmd(command,input,pathRequired,path,lengthForce,line){
         if(command[i] != input[i]){
             return false;
         } else {
-            if(pathRequired && path == undefined){
-                rip(line,"attempted to use "+command[0]+" when path unset");
-            }
-            if(lengthForce === true && input.length != command.length){
-                rip(line,"wrong number of arguments on "+command[0]);
-            } else if(lengthForce !== false && lengthForce !== true) {
-                if(input.length < lengthForce){
-                    rip(line,"wrong number of arguments on "+command[0]);
+            if(parseInt(i)+1==command.length){
+                if(pathRequired && path == undefined){
+                    rip(line,"attempted to use "+command[0]+" when path unset");
                 }
+                if(lengthForce === true && input.length != command.length){
+                    rip(line,"wrong number of arguments on "+command[0]);
+                } else if(lengthForce !== false && lengthForce !== true) {
+                    if(input.length < lengthForce){
+                        rip(line,"wrong number of arguments on "+command[0]);
+                    }
+                }
+                return true;
             }
-            if(parseInt(i)+1==command.length) return true;
             continue;
         }
     }
@@ -82,7 +85,11 @@ export function parseStory(story){
             "<a>",
             "<a>"
         ], l, false, path, true, i)){
-            console.log(`meta ${l[1]} ${l[2]}`);
+            if(l[1] == "storyParseTargetVersion"){
+                if(l[2] != storyParseVersion){
+                    console.warn("Storyfile meant for storyParser v"+l[2]+", current is "+storyParseVersion);
+                }
+            }
 			out.meta[l[1]] = l[2];
         } else if(matchCmd([
             "path",
@@ -92,20 +99,79 @@ export function parseStory(story){
             if(path != undefined){
                 rip(i, "path already defined");
             } else {
-                console.log("set path to "+l[2]);
                 path = l[2];
                 out.content[path] = [];
             }
         } else if(matchCmd([
+            "path",
+            "end"
+        ], l, true, path, true, i)){
+            path=undefined;
+        } else if(matchCmd([
             "chars"
         ], l, true, path, 1, i)){
             let k = l.filter(a => l.indexOf(a) !== 0);
-            console.log("chars", k);
+            if(k.length < 1){
+                rip(i,"missing character params on chars");
+            }
             chars=k;
             out.content[path].push({
                 "type": "chars",
                 "target": k,
                 "blocking": blockNext
+            });
+        } else if(matchCmd([
+            "sprite",
+            "<a>",
+            "<a>"
+        ], l, true, path, true, i)){
+            if(chars.indexOf(l[1]) == -1){
+                rip(i,`${l[1]} not present in scene while attempting to set subsprite`);
+            }
+            out.content[path].push({
+                "type": "subsprite",
+                "target": l[1],
+                "data": l[2],
+                "blocking": blockNext
+            });
+        } else if(matchCmd([
+            "back",
+            "<a>"
+        ], l, false, path, true, i)){
+            let tg = l[1];
+            if(tg.indexOf(".") == -1 && out.meta.defaultFileExtension != undefined){
+                tg+="."+out.meta.defaultFileExtension;
+            }
+            out.content[path].push({
+                "type": "background",
+                "target": tg,
+                "blocking": blockNext
+            });
+        } else if(matchCmd([
+            "options"
+        ], l, true, path, 1, i)){
+            let k = l.filter(a => l.indexOf(a) !== 0);
+            if(k.length % 2 != 0){
+                rip(i,"odd number of params on options");
+            }
+            let o = {};
+            for(let i=0;i<k.length;i+=2){
+                o[k[i]] = k[i+1];
+            }
+            out.content[path].push({
+                "type": "options",
+                "target": o,
+                "blocking": true
+            });
+        } else if(matchCmd([
+            "sound",
+            "<a>",
+            "<a>"
+        ], l, false, path, true, i)){
+            out.content[path].push({
+                "type": "sound",
+                "target": l[1],
+                "data": l[2]
             });
         } else {
             if(chars.indexOf(l[0]) != -1){
