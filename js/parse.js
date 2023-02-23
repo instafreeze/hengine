@@ -68,6 +68,7 @@ export function parseStory(story){
         content: {}
     };
     let chars = [];
+    let sounds = [];
     story = story.split("\n");
     let path = undefined;
     let blockNext = false;
@@ -166,13 +167,33 @@ export function parseStory(story){
         } else if(matchCmd([
             "sound",
             "<a>",
+            "<a>",
+            "<a>",
             "<a>"
         ], l, false, path, true, i)){
-            out.content[path].push({
-                "type": "sound",
-                "target": l[1],
-                "data": l[2]
-            });
+            if(l[1] == "start"){
+                if(sounds.indexOf(l[4]) != -1){
+                    rip(i,"attempted to start sound with duplicate id");
+                }
+                sounds.push(l[4]);
+                out.content[path].push({
+                    "type": "sound",
+                    "target": l[1],
+                    "data": l[2]
+                });
+            } else if(l[1] == "stop"){
+                if(sounds.indexOf(l[4]) == -1){
+                    rip(i,"attempted to end nonexistant sound");
+                }
+                sounds.splice(sounds.indexOf(l[4]), 1);
+                out.content[path].push({
+                    "type": "soundend",
+                    "target": l[4]
+                });
+            } else {
+                rip(i,"invalid sound mode paramter");
+            }
+            
         } else {
             if(chars.indexOf(l[0]) != -1){
                 out.content[path].push({
