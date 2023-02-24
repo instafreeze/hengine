@@ -10,7 +10,7 @@ export class Game{
 	meta = {};
     updateSize(x,y){
         this.size.x = x;
-
+        this.size.y = y;
     }
     async preload(path){
         try{
@@ -28,4 +28,16 @@ export class Game{
 		this.meta = d;
 		return true;
 	}
+    story = {}
+    current = {
+        background: "",
+        chars: [],
+        dialog: {
+            owner: "",
+            content: ""
+        },
+        depth: [], // starting a scene withing a scene within a path would result in ["scene/toplevel", "scene/bottomlevel", "rootlevel"];
+        progression: [], //same senario = [5, 2, 11]
+        blocked: false
+    }
 }

@@ -1,4 +1,14 @@
 # Commands
+### comments
+lines prepended with `//` will not be executed, for example
+```
+path begin default
+chars joe bob
+bob "hey joe"
+//joe "hey bob"
+path end
+```
+will only have bob greet joe
 ### meta
 document information is provided via meta command
 ```
@@ -9,6 +19,32 @@ supported meta keys are
 `defaultFileExtension` default filetype to append to files specified without filetype
 'file' becomes 'file.value'
 'file.other' remains 'file.other'
+### scene
+static scene that does not advance game
+```
+scene start interaction1
+```
+and
+```
+scene end
+```
+to use scenes:
+```
+scene run sceneName
+```
+define scenes before using them in paths
+returns to original path after done, for example
+```
+scene begin interaction
+joe "hey man"
+bob "hello"
+scene end
+path begin default
+chars joe bob
+scene run interaction
+options run run1 stay stay1
+```
+will define characters then show dialog, then present options
 ### path
 paths are defined via this tag
 ```
@@ -25,6 +61,8 @@ this is the path used by default
 paths define the story
 each "segment" is a seperate path
 for example, default path gives two options: path1 and path2 - depending on what the user chooses they will either continue in path1 or path2
+#### paths vs scenes
+scenes are used to easily manage seperate scenes, whereas paths control game direction
 ### block
 ```
 block
@@ -84,6 +122,11 @@ duration is the amount of miliseconds to wait after the sound ends to start it a
 meta storyParseTargetVersion 0.0
 meta defaultFileExtension png
 
+scene begin diag1
+chars joe bob
+bob "kkkkkys"
+joe "omgisters"
+scene end
 path begin default
 block
 sound start sound.mp3 1000 0123456
@@ -101,4 +144,5 @@ bob "how many cheeseburgers hit?"
 joe "eleven"
 bob "no, tweleve"
 joe "ahahahhahah hahh aha hah ha hah ha BOOM"
+path end
 ```

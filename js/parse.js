@@ -109,6 +109,34 @@ export function parseStory(story){
         ], l, true, path, true, i)){
             path=undefined;
         } else if(matchCmd([
+            "scene",
+            "begin",
+            "<a>"
+        ], l, false, path, true, i)){
+            if(path != undefined){
+                rip(i,"cannot define scene inside of path");
+            }
+            path = "scene/"+l[2];
+            out.content[path]=[];
+        } else if(matchCmd([
+            "scene",
+            "end",
+        ], l, true, path, true, i)){
+            if(path.indexOf("scene/") != 0){
+                rip(i,"cannot end non active scene");
+            }
+            path=undefined;
+        } else if(matchCmd([
+            "scene",
+            "run",
+            "<a>"
+        ], l, true, path, true, i)){
+            out.content[path].push({
+                "type": "scene",
+                "target": l[2],
+                "blocking": blockNext
+            });
+        } else if(matchCmd([
             "chars"
         ], l, true, path, 1, i)){
             let k = l.filter(a => l.indexOf(a) !== 0);
@@ -151,6 +179,9 @@ export function parseStory(story){
         } else if(matchCmd([
             "options"
         ], l, true, path, 1, i)){
+            if(path.indexOf("scene/") == 0){
+                rip(i,"cannot show options inside of scene");
+            }
             let k = l.filter(a => l.indexOf(a) !== 0);
             if(k.length % 2 != 0){
                 rip(i,"odd number of params on options");
@@ -179,16 +210,18 @@ export function parseStory(story){
                 out.content[path].push({
                     "type": "sound",
                     "target": l[1],
-                    "data": l[2]
+                    "data": l[2],
+                    "blocking": blockNext
                 });
-            } else if(l[1] == "stop"){
-                if(sounds.indexOf(l[4]) == -1){
+            } else if(l[1] == "end"){
+                if(sounds.indexOf(l[2]) == -1){
                     rip(i,"attempted to end nonexistant sound");
                 }
-                sounds.splice(sounds.indexOf(l[4]), 1);
+                sounds.splice(sounds.indexOf(l[2]), 1);
                 out.content[path].push({
                     "type": "soundend",
-                    "target": l[4]
+                    "target": l[2],
+                    "blocking": blockNext
                 });
             } else {
                 rip(i,"invalid sound mode paramter");
