@@ -14,16 +14,36 @@ function calc(){
     game.updateSize(cx,cy);
     return true;
 }
-function exec(x){
+document.body.addEventListener("keyup", (e)=>{
+    if(e.code == "Space"){
+        game.current.blocked=false;
+    }
+})
+function exec(x,depth,pr){
+    x = JSON.parse(JSON.stringify(x));
+    console.log(x.type);
     if(x.type == "background"){
         if(game.story.meta.defaultFileExtension != undefined && x.target.indexOf(".") == -1){
-            x.target=x.target+"."+game.story.meta.defaultFileExtension;
+            x.target = x.target+"."+game.story.meta.defaultFileExtension;
         }
-
+        game.current.background = "backgrounds/"+x.target
     }
+    if(x.type == "scene"){
+        depth.unshift("scene/"+x.target);
+        pr.unshift(0);
+    }
+    if(x.type == "dialog"){
+        console.warn(`${x.target}: ${x.data}`);
+    }
+    if(x.type == "chars"){
+        game.current.chars = x.target;
+    }
+    return true;
 }
-function preloader(depth,pr){
-    let count = 2;
+function preloader(d,p){
+    let depth = JSON.parse(JSON.stringify(d));
+    let pr = JSON.parse(JSON.stringify(p));
+    let count = 3;
     while(1){
         pr[0]+=1;
         if(count==0)return true;
@@ -35,25 +55,47 @@ function preloader(depth,pr){
                 return true;
             }
         }
-        let x = game.story.content[depth[0]][pr[0]];
+        let x = JSON.parse(JSON.stringify(game.story.content[depth[0]][pr[0]]));
         if(x.blocking){
             count--;
-            continue;
-        } else {
-            //follow scene and path redirections
-            //for paths, preload one step of each choice
-            //if we run into media, preload it
-            if(x.type == "background"){
-                if(game.story.meta.defaultFileExtension != undefined && x.target.indexOf(".") == -1){
-                    x.target=x.target+"."+game.story.meta.defaultFileExtension;
-                }
+        }
+        if(x.type == "background"){
+            if(game.story.meta.defaultFileExtension != undefined && x.target.indexOf(".") == -1){
+                x.target=x.target+"."+game.story.meta.defaultFileExtension;
+            }
+            x.target="backgrounds/"+x.target;
+            if(game.cache[x.target] == undefined && game.processing.indexOf(x.target) == -1){
+                console.log("preloading "+x.target);
                 game.preload(x.target);
             }
         }
+        if(x.type == "chars"){
+            for(let i in x.target){
+                let src = "characters/"+x.target[i]+"/"+x.target[i]+"-neutral.png";
+                if(game.cache[src] == undefined && game.processing.indexOf(src) == -1){
+                    console.log("preloading "+src);
+                    game.preload(src);
+                }
+            }
+        }
+        if(x.type == "scene"){
+            depth.unshift("scene/"+x.target);
+            pr.unshift(0);
+        }
     }
 }
-preloader()
-//render loop
+//drawing function
+function render(){
+    if(game.current.background != ""){
+        ctx.drawImage(game.cache[game.current.background], 0,0);
+    }
+    if(game.current.chars.length > 0){
+        for(let i in game.current.chars){
+            ctx.drawImage(game.cache["characters/"+game.current.chars[i]+"/"+game.current.chars[i]+"-neutral.png"], (game.size.x/game.current.chars.length)*i, 0);
+        }
+    }
+}
+//logic loop
 async function frame(){
     ctx.clearRect(0, 0, game.size.x, game.size.y);
     ctx.strokeStyle = "";
@@ -70,6 +112,7 @@ async function frame(){
         ctx.fillText(game.meta.name, game.size.x/2, 100);
         ctx.font = "24px Arial";
         ctx.fillText(game.meta.authors, game.size.x/2, 150);
+        preloader(["default"], [0]);
         setTimeout(function(){
             game.mode = "play";
         }, 1000);
@@ -79,7 +122,8 @@ async function frame(){
             game.current.progression = [0];
         }
         if(game.current.blocked){
-            game.current.blocked=false;
+            //window.confirm("men");
+            //game.current.blocked=false;
         } else {
             while(1){
                 game.current.progression[0]+=1;
@@ -91,45 +135,41 @@ async function frame(){
                         throw "";
                     }
                 } else {
+                    preloader(game.current.depth,game.current.progression);
                     let x = game.story.content[game.current.depth[0]][game.current.progression[0]];
+                    exec(x,game.current.depth,game.current.progression);
                     if(x.blocking){
                         game.current.blocked = true;
                         break;
-                    } else {
-                        console.log(x);
                     }
                 }
             }
         }   
     }
+    render();
     requestAnimationFrame(frame);
 }
 game.story = parseStory(`meta storyParseTargetVersion 0.0
 meta defaultFileExtension png
 
 scene begin diag1
-chars joe bob
-bob "kkkkkys"
-joe "omgisters"
+chars bro soup
+block
+back skylake.webp
+bro "kkkkkys"
+soup "omgisters"
 scene end
 path begin default
 block
 sound start sound.mp3 1000 0123456
-chars bob joe
-back menu
-sprite bob angry
-bob "this contains space so must put quotations"
-joe "huh bingle.mp4"
+chars bro soup
+back hamburger.png
+sprite bro angry
+bro "this contains space so must put quotations"
+soup "huh bingle.mp4"
 scene run diag1
 options name path name2 path2
 sound end 0123456
-path end
-path begin funny
-chars bob joe
-bob "how many cheeseburgers hit?"
-joe "eleven"
-bob "no, tweleve"
-joe "ahahahhahah hahh aha hah ha hah ha BOOM"
 path end`);
 calc();
 frame();

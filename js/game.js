@@ -2,24 +2,31 @@ export class Game{
     constructor(){
         this.mode = "beforeload";
     }
-    cache = {}
+    cache = {};
     size = {
         x: 0,
         y: 0
-    }
+    };
 	meta = {};
+    processing = [];
     updateSize(x,y){
         this.size.x = x;
         this.size.y = y;
     }
     async preload(path){
+        let st = new Date().getTime();
+        this.processing.push(path);
         try{
             let d = await fetch("/project/"+path);
             d= await d.blob();
             this.cache[path] = await createImageBitmap(d);
+            console.log(`cached ${path} in ${new Date().getTime()-st}`);
 			return true;
         } catch(e){
+            console.log("ENGNE");
             throw e;
+        } finally {
+            this.processing.splice(this.processing.indexOf(path), 1);
         }
     }
 	async loadMeta(){
