@@ -140,7 +140,7 @@ export function parseStory(story){
             "chars"
         ], l, true, path, 1, i)){
             let k = l.filter(a => l.indexOf(a) !== 0);
-            if(k.length < 1){
+            if(k.length < 0){
                 rip(i,"missing character params on chars");
             }
             chars=k;

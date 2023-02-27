@@ -1,7 +1,9 @@
 export class Game{
-    constructor(){
+    constructor(opt){
         this.mode = "beforeload";
+        this.logs = opt.logs;
     }
+    logs = false;
     cache = {};
     size = {
         x: 0,
@@ -9,6 +11,9 @@ export class Game{
     };
 	meta = {};
     processing = [];
+    log(e){
+        if(this.logs)console.log(e);
+    }
     updateSize(x,y){
         this.size.x = x;
         this.size.y = y;
@@ -20,10 +25,10 @@ export class Game{
             let d = await fetch("/project/"+path);
             d= await d.blob();
             this.cache[path] = await createImageBitmap(d);
-            console.log(`cached ${path} in ${new Date().getTime()-st}`);
+            if(this.logs)console.log(`cached ${path} in ${new Date().getTime()-st} (${this.cache[path].width}x${this.cache[path].height})`);
 			return true;
         } catch(e){
-            console.log("ENGNE");
+            if(this.logs)console.log("failue on preload");
             throw e;
         } finally {
             this.processing.splice(this.processing.indexOf(path), 1);
